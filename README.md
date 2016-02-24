@@ -47,3 +47,7 @@ If you want use the internal Emacs web browser (EWW, since Emacs 24.4) you can s
 ```
 
 If you want to keep the search open use `C-z` instead of `RET`.
+
+### helm-google-suggest
+
+`helm-google` is added as an action to `helm-google-suggest` (thanks to Dickby). Press TAB and choose `Helm-Google` or use the shortcut listed there directly.
