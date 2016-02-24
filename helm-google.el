@@ -216,20 +216,27 @@ Since the API this library uses is deprecated it is not very reliable."
     (volatile)))
 
 ;;;###autoload
-(defun helm-google ()
-  "Preconfigured `helm' : Google search."
-  (interactive)
-  (let ((google-referer "https://github.com/steckerhalter/helm-google")
-        (region (when (use-region-p)
-                  (buffer-substring-no-properties
-                   (region-beginning)
-                   (region-end))))
-        (helm-input-idle-delay 0.3))
-    (helm :sources 'helm-source-google
-          :prompt "Google: "
-          :input region
-          :buffer "*helm google*"
-          :history 'helm-google-input-history)))
+(defun helm-google ( &optional arg)
+    "Preconfigured `helm' : Google search."
+    (interactive)
+    (let ((google-referer "https://github.com/steckerhalter/helm-google")
+          (region
+           (if (not arg)
+               (when (use-region-p)
+                 (buffer-substring-no-properties
+                  (region-beginning)
+                  (region-end)))
+             arg))
+          (helm-input-idle-delay 0.3))
+      (helm :sources 'helm-source-google
+            :prompt "Google: "
+            :input region
+            :buffer "*helm google*"
+            :history 'helm-google-input-history)))
+  
+(add-to-list 'helm-google-suggest-actions
+    '("Helm-Google" . (lambda (candidate)
+      (helm-google candidate))))
 
 (provide 'helm-google)
 
