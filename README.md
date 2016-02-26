@@ -40,7 +40,9 @@ Or bind it to a key:
 
 If a region is selected it will take that as default input and search Google immediately. Otherwise it will start to search after you have entered a term. Pressing `RET` on a result calls the `browse-url` function which should open the URL in your web browser.
 
-If you want use the internal Emacs web browser (EWW, since Emacs 24.4) you can set it as your default browser like so:
+There are two Helm actions defined. The first (default) action is the one mentioned above and the second action will open the URL with the internal `Emacs Web Wowser` (EWW, since Emacs 24.4). You can press <key>F2</key> to execute this action directly.
+
+If you want use EWW by default you can set it as your default browser like so:
 
 ```lisp
 (setq browse-url-browser-function 'eww-browse-url)
