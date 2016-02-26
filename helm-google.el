@@ -54,6 +54,16 @@ Available functions are currently `helm-google-api-search' and
   :type 'boolean
   :group 'helm-google)
 
+(defcustom helm-google-actions
+  '(("Browse URL" . browse-url)
+    ("Browse URL with EWW" . (lambda (candidate)
+                               (eww-browse-url
+                                (helm-google-display-to-real candidate)))))
+  "List of actions for helm-google sources."
+  :group 'helm-google
+  :type '(alist :key-type string :value-type function))
+
+
 (defvar helm-google-input-history nil)
 (defvar helm-google-pending-query nil)
 
@@ -207,7 +217,7 @@ Since the API this library uses is deprecated it is not very reliable."
 (defvar helm-source-google
   `((name . "Google")
     (init . (lambda () (require 'google)))
-    (action ("Browse URL" . browse-url))
+    (action . helm-google-actions)
     (display-to-real . helm-google-display-to-real)
     (candidates . helm-google-search)
     (requires-pattern)
