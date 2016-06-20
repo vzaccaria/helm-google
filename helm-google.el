@@ -29,6 +29,7 @@
 ;;; Code:
 
 (require 'helm)
+(require 'helm-net)
 (require 'google)
 
 (defgroup helm-google '()
