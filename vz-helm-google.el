@@ -1,10 +1,10 @@
-;;; helm-google.el --- Emacs Helm Interface for quick Google searches
+;;; vz-helm-google.el --- Emacs Helm Interface for quick Google searches
 
-;; Copyright (C) 2014, Steckerhalter
+;; Copyright (C) 2014, vzaccaria
 
-;; Author: steckerhalter
+;; Author: vzaccaria
 ;; Package-Requires: ((helm "0") (google "0"))
-;; URL: https://github.com/steckerhalter/helm-google
+;; URL: https://github.com/vzaccaria/helm-google
 ;; Keywords: helm google search browse
 
 ;; This file is not part of GNU Emacs.
@@ -32,54 +32,54 @@
 (require 'helm-net)
 (require 'google)
 
-(defgroup helm-google '()
-  "Customization group for `helm-google'."
-  :link '(url-link "http://github.com/steckerhalter/helm-google")
+(defgroup vz-helm-google '()
+  "Customization group for `vz-helm-google'."
+  :link '(url-link "http://github.com/vzaccaria/helm-google")
   :group 'convenience
   :group 'comm)
 
-(defcustom helm-google-search-function 'helm-google-html-search
+(defcustom vz-helm-google-search-function 'vz-helm-google-html-search
   "The function that should be used to get the search results.
-Available functions are currently `helm-google-api-search' and
-`helm-google-html-search'."
+Available functions are currently `vz-helm-google-api-search' and
+`vz-helm-google-html-search'."
   :type 'symbol
-  :group 'helm-google)
+  :group 'vz-helm-google)
 
-(defcustom helm-google-tld "com"
+(defcustom vz-helm-google-tld "com"
   "The TLD of the google url to be used (com, de, fr, co.uk etc.)."
   :type 'string
-  :group 'helm-google)
+  :group 'vz-helm-google)
 
-(defcustom helm-google-use-regexp-parsing nil
+(defcustom vz-helm-google-use-regexp-parsing nil
   "Force use of regexp html parsing even if libxml is available."
   :type 'boolean
-  :group 'helm-google)
+  :group 'vz-helm-google)
 
-(defcustom helm-google-actions
+(defcustom vz-helm-google-actions
   '(("Browse URL" . browse-url)
     ("Browse URL with EWW" . (lambda (candidate)
                                (eww-browse-url
-                                (helm-google-display-to-real candidate)))))
-  "List of actions for helm-google sources."
-  :group 'helm-google
+                                (vz-helm-google-display-to-real candidate)))))
+  "List of actions for vz-helm-google sources."
+  :group 'vz-helm-google
   :type '(alist :key-type string :value-type function))
 
 
-(defvar helm-google-input-history nil)
-(defvar helm-google-pending-query nil)
+(defvar vz-helm-google-input-history nil)
+(defvar vz-helm-google-pending-query nil)
 
-(defun helm-google-url ()
+(defun vz-helm-google-url ()
   "URL to google searches.
 If 'com' TLD is set use 'encrypted' subdomain to avoid country redirects."
   (concat "https://"
-          (if (string= "com" helm-google-tld)
+          (if (string= "com" vz-helm-google-tld)
               "encrypted"
             "www")
           ".google."
-          helm-google-tld
+          vz-helm-google-tld
           "/search?ie=UTF-8&oe=UTF-8&q=%s"))
 
-(defun helm-google--process-html (html)
+(defun vz-helm-google--process-html (html)
   (replace-regexp-in-string
    "\n" ""
    (with-temp-buffer
@@ -87,7 +87,7 @@ If 'com' TLD is set use 'encrypted' subdomain to avoid country redirects."
      (html2text)
      (buffer-substring-no-properties (point-min) (point-max)))))
 
-(defmacro helm-google--with-buffer (buf &rest body)
+(defmacro vz-helm-google--with-buffer (buf &rest body)
   (declare (doc-string 3) (indent 2))
   `(with-current-buffer ,buf
      (set-buffer-multibyte t)
@@ -95,20 +95,20 @@ If 'com' TLD is set use 'encrypted' subdomain to avoid country redirects."
      (prog1 ,@body
        (kill-buffer ,buf))))
 
-(defun helm-google--parse-w/regexp (buf)
-  (helm-google--with-buffer buf
+(defun vz-helm-google--parse-w/regexp (buf)
+  (vz-helm-google--with-buffer buf
       (let (results result)
         (while (re-search-forward "class=\"r\"><a href=\"/url\\?q=\\(.*?\\)&amp;sa" nil t)
           (setq result (plist-put result :url (match-string-no-properties 1)))
           (re-search-forward "\">\\(.*?\\)</a></h3>" nil t)
-          (setq result (plist-put result :title (helm-google--process-html (match-string-no-properties 1))))
+          (setq result (plist-put result :title (vz-helm-google--process-html (match-string-no-properties 1))))
           (re-search-forward "class=\"st\">\\([\0-\377[:nonascii:]]*?\\)</span>" nil t)
-          (setq result (plist-put result :content (helm-google--process-html (match-string-no-properties 1))))
+          (setq result (plist-put result :content (vz-helm-google--process-html (match-string-no-properties 1))))
           (add-to-list 'results result t)
           (setq result nil))
         results)))
 
-(defun helm-google--tree-search (tree)
+(defun vz-helm-google--tree-search (tree)
   (pcase tree
     (`(,x . ,y) (or (and (null y) nil)
                     (and (eql x 'div)
@@ -116,53 +116,53 @@ If 'com' TLD is set use 'encrypted' subdomain to avoid country redirects."
                          (pcase-let* ((`(_ _ . ,ol) tree)
                                       (`(_ _ . ,items) (car ol)))
                            items))
-                    (helm-google--tree-search x)
-                    (helm-google--tree-search y)))))
+                    (vz-helm-google--tree-search x)
+                    (vz-helm-google--tree-search y)))))
 
-(defun helm-google--parse-w/libxml (buf)
-  (let* ((xml (helm-google--with-buffer buf
+(defun vz-helm-google--parse-w/libxml (buf)
+  (let* ((xml (vz-helm-google--with-buffer buf
                   (libxml-parse-html-region
                    (point-min) (point-max))))
-         (items (helm-google--tree-search xml))
+         (items (vz-helm-google--tree-search xml))
          (get-string (lambda (element)
                        (mapconcat (lambda (e)
                                     (if (listp e) (car (last e)) e))
                                   element "")))
          (fix-url (lambda (str)
-                    (concat "https://www.google." helm-google-tld str)))
+                    (concat "https://www.google." vz-helm-google-tld str)))
          results)
     (dolist (item items results)
       (add-to-list 'results
                    (list :title (funcall get-string (cddr (assoc 'a (assoc 'h3 item))))
                          :cite (funcall get-string (cddr (assoc 'cite (assoc 'div (assoc 'div item)))))
                          :url (funcall fix-url (cdr (assoc 'href (cadr (assoc 'a (assoc 'h3 item))))))
-                         :content (helm-google--process-html
+                         :content (vz-helm-google--process-html
                                    (funcall get-string (cddr (assoc 'span (assoc 'div item))))))
                    t))))
 
-(defun helm-google--parse (buf)
+(defun vz-helm-google--parse (buf)
   "Extract the search results from BUF."
-  (if (or helm-google-use-regexp-parsing
+  (if (or vz-helm-google-use-regexp-parsing
           (not (fboundp 'libxml-parse-html-region)))
-      (helm-google--parse-w/regexp buf)
-    (helm-google--parse-w/libxml buf)))
+      (vz-helm-google--parse-w/regexp buf)
+    (vz-helm-google--parse-w/libxml buf)))
 
-(defun helm-google--response-buffer-from-search (text &optional search-url)
+(defun vz-helm-google--response-buffer-from-search (text &optional search-url)
   (let ((url-mime-charset-string "utf-8")
-        (url (format (or search-url (helm-google-url)) (url-hexify-string text))))
+        (url (format (or search-url (vz-helm-google-url)) (url-hexify-string text))))
     (url-retrieve-synchronously url t)))
 
-(defun helm-google--search (text)
-  (let* ((buf (helm-google--response-buffer-from-search text))
-         (results (helm-google--parse buf)))
+(defun vz-helm-google--search (text)
+  (let* ((buf (vz-helm-google--response-buffer-from-search text))
+         (results (vz-helm-google--parse buf)))
     results))
 
-(defun helm-google-html-search ()
+(defun vz-helm-google-html-search ()
   "Get Google results by scraping the website.
 This is better than using the deprecated API. It gives more
 results but is tied to the html output so any change Google
 makes can break the results."
-  (let* ((results (helm-google--search helm-pattern)))
+  (let* ((results (vz-helm-google--search helm-pattern)))
     (mapcar (lambda (result)
               (let ((cite (plist-get result :cite)))
                 (concat
@@ -183,7 +183,7 @@ makes can break the results."
                   'face (if cite 'glyphless-char 'link)))))
             results)))
 
-(defun helm-google-api-search ()
+(defun vz-helm-google-api-search ()
   "Get Google results using the `google.el' library.
 Since the API this library uses is deprecated it is not very reliable."
   (let* ((results (google-search helm-pattern))
@@ -207,30 +207,30 @@ Since the API this library uses is deprecated it is not very reliable."
                 'face 'link)))
             records)))
 
-(defun helm-google-search ()
-  "Invoke the search function set by `helm-google-search-function'."
-  (funcall helm-google-search-function))
+(defun vz-helm-google-search ()
+  "Invoke the search function set by `vz-helm-google-search-function'."
+  (funcall vz-helm-google-search-function))
 
-(defun helm-google-display-to-real (candidate)
+(defun vz-helm-google-display-to-real (candidate)
   "Retrieve the URL from the results for the action."
   (car (last (split-string candidate "[\n]+"))))
 
 (defvar helm-source-google
   `((name . "Google")
     (init . (lambda () (require 'google)))
-    (action . helm-google-actions)
-    (display-to-real . helm-google-display-to-real)
-    (candidates . helm-google-search)
+    (action . vz-helm-google-actions)
+    (display-to-real . vz-helm-google-display-to-real)
+    (candidates . vz-helm-google-search)
     (requires-pattern)
     (nohighlight)
     (multiline)
     (volatile)))
 
 ;;;###autoload
-(defun helm-google ( &optional arg)
+(defun vz-helm-google ( &optional arg)
   "Preconfigured `helm' : Google search."
   (interactive)
-  (let ((google-referer "https://github.com/steckerhalter/helm-google")
+  (let ((google-referer "https://github.com/vzaccaria/vz-helm-google")
         (region
          (if (not arg)
              (when (use-region-p)
@@ -243,12 +243,9 @@ Since the API this library uses is deprecated it is not very reliable."
           :prompt "Google: "
           :input region
           :buffer "*helm google*"
-          :history 'helm-google-input-history)))
+          :history 'vz-helm-google-input-history)))
 
-(add-to-list 'helm-google-suggest-actions
-             '("Helm-Google" . (lambda (candidate)
-                                 (helm-google candidate))))
 
-(provide 'helm-google)
+(provide 'vz-helm-google)
 
 ;;; helm-google.el ends here
